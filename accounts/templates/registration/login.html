@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema de Recepciones</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            /* Paleta de colores personalizada - Sistema SLEP */
+            --primary-blue: #1e40af;
+            --light-blue: #3b82f6;
+            --cyan: #06b6d4;
+            --red: #ef4444;
+            --pink: #ec4899;
+            --yellow: #eab308;
+            --lime: #84cc16;
+            --teal-dark: #0f172a;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--light-blue) 50%, var(--cyan) 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Efectos de fondo */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .login-container {
+            max-width: 450px;
+            width: 100%;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(15px);
+            background: rgba(255, 255, 255, 0.95);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--light-blue) 100%);
+            border-bottom: none;
+            text-align: center;
+            padding: 3rem 2rem 2rem;
+            position: relative;
+        }
+
+        .card-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .card-header img {
+            max-width: 180px;
+            height: auto;
+            margin-bottom: 1.5rem;
+            filter: brightness(0) invert(1);
+            position: relative;
+            z-index: 1;
+        }
+
+        .card-header h4 {
+            color: white;
+            font-weight: 600;
+            font-size: 1.5rem;
+            margin: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card-body {
+            padding: 3rem 2rem;
+        }
+
+        .form-floating {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-floating input {
+            border-radius: 12px;
+            border: 2px solid #e5e7eb;
+            padding: 1rem 0.75rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .form-floating input:focus {
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 0.2rem rgba(6, 182, 212, 0.25);
+            transform: translateY(-2px);
+            background: white;
+        }
+
+        .form-floating label {
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--light-blue) 100%);
+            border: none;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3);
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(30, 64, 175, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .alert {
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            border: none;
+            padding: 1rem;
+        }
+
+        .alert-danger {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%);
+            border: 1px solid var(--red);
+            color: #0f172a;
+        }
+
+        .form-control:focus {
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 0.2rem rgba(6, 182, 212, 0.25);
+        }
+
+        /* Animación de entrada */
+        .card {
+            animation: slideInUp 0.8s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Efecto de flotación sutil */
+        .card:hover {
+            transform: translateY(-5px);
+            transition: transform 0.3s ease;
+        }
+
+        /* Enlace de administración */
+        .admin-link {
+            color: #6b7280 !important;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+
+        .admin-link:hover {
+            color: var(--primary-blue) !important;
+            transform: translateY(-1px);
+        }
+
+        /* Responsive */
+        @media (max-width: 576px) {
+            .login-container {
+                padding: 1rem;
+            }
+            
+            .card-header {
+                padding: 2rem 1.5rem 1.5rem;
+            }
+            
+            .card-body {
+                padding: 2rem 1.5rem;
+            }
+            
+            .card-header img {
+                max-width: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="card">
+            <div class="card-header">
+                <img src="/static/img/Logo.png" alt="SLEP Logo" class="img-fluid">
+                <h4 class="mb-0">Sistema de SSGG, Operaciones y Soporte TI</h4>
+            </div>
+            <div class="card-body">
+                {% if form.errors %}
+                <div class="alert alert-danger" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Usuario o contraseña incorrectos. Por favor, intente nuevamente.
+                </div>
+                {% endif %}
+
+                <form method="post" action="{% url 'accounts:login' %}">
+                    {% csrf_token %}
+                    
+                    {% if next %}
+                        <input type="hidden" name="next" value="{{ next }}">
+                    {% else %}
+                        <input type="hidden" name="next" value="/sistema/">
+                    {% endif %}
+
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Usuario" required autofocus>
+                        <label for="username">
+                            <i class="bi bi-person me-2"></i>Usuario
+                        </label>
+                    </div>
+                    <div class="form-floating">
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Contraseña" required>
+                        <label for="password">
+                            <i class="bi bi-lock me-2"></i>Contraseña
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
+                    </button>
+                </form>
+                
+                <div class="text-center mt-4">
+                    <small class="text-muted">
+                        <i class="bi bi-shield-check me-1"></i>
+                        Acceso seguro y protegido
+                    </small>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <a href="/admin/" class="text-decoration-none admin-link">
+                        <i class="bi bi-gear me-1"></i>
+                        Administración
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

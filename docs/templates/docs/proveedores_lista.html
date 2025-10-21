@@ -1,0 +1,178 @@
+{% extends 'docs/base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- CSS DataTables -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0">Listado de Servicios</h2>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <table id="tablaServicios" class="table table-striped table-hover display nowrap align-middle" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Rut</th>
+                        <th>Proveedor</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for proveedor in proveedores %}
+                    <tr>
+                        <td>{{ proveedor.nombre }}</td>
+                        <td>{{ proveedor.rut }}</td>
+                        <td>{{ proveedor.tipo_proveedor.nombre }}</td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="" class="btn btn-sm btn-info" title="Ver detalles">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'editar_proveedor' proveedor.id_prov %}" class="btn btn-sm btn-primary" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Rut</th>
+                        <th>Proveedor</th>
+                        <th></th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- JS DataTables + extensiones -->
+<script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+<script>
+    $(document).ready(function () {
+        // Agregar filtros en cada columna del tfoot
+        $('#tablaServicios tfoot th').each(function () {
+            var title = $(this).text();
+            if (title !== "") {
+                $(this).html('<input type="text" class="form-control form-control-sm" placeholder="Filtrar ' + title + '" />');
+            }
+        });
+
+        var table = $('#tablaServicios').DataTable({
+            dom: '<"top"<"float-start"f><"float-end"B>>rt<"bottom"<"float-start"l><"float-end"p>>',
+            buttons: [
+                {
+                    extend: 'excelHtml5',
+                    text: '<i class="bi bi-file-earmark-excel-fill me-1"></i> <strong>Excel</strong>',
+                    className: 'btn btn-sm btn-success rounded-pill px-3 py-1',
+                    titleAttr: 'Exportar a Excel'
+                }
+            ],
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json',
+                search: "Buscar:",
+                searchPlaceholder: "Buscar en todos los campos..."
+            },
+            initComplete: function () {
+                this.api().columns().every(function () {
+                    var that = this;
+                    $('input', this.footer()).on('keyup change clear', function () {
+                        if (that.search() !== this.value) {
+                            that.search(this.value).draw();
+                        }
+                    });
+                });
+            }
+        });
+    });
+</script>
+
+
+<!-- Estilos mejorados -->
+<style>
+    table.dataTable thead th {
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    table.dataTable tfoot th {
+        border-top: 2px solid #dee2e6;
+    }
+
+    .dataTables_wrapper {
+        padding: 1rem 0;
+    }
+
+    .dt-buttons {
+        margin-bottom: 1rem;
+    }
+
+    .btn-group .btn {
+        margin: 0 2px;
+    }
+
+    .filters input {
+        width: 100%;
+        padding: 3px;
+        box-sizing: border-box;
+    }
+
+    /* Estilo para la paginación de DataTables al estilo Bootstrap moderno */
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+        padding: 0.375rem 0.75rem;
+        margin: 0 2px;
+        border-radius: 50rem;
+        border: 1px solid #dee2e6;
+        background-color: #f8f9fa;
+        color: #495057 !important;
+        font-size: 0.875rem;
+    }
+
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+        background-color: skyblue;
+        color: black !important;
+        border-color: skyblue;
+    }
+
+    .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+        background-color: #198754;
+        color: white !important;
+        border-color: skyblue;
+    }
+
+    tfoot input {
+        width: 100%;
+        box-sizing: border-box;
+        font-size: 0.875rem;
+    }
+
+    /* Estilos para el buscador global */
+    .dataTables_filter {
+        margin-bottom: 1rem;
+    }
+
+    .dataTables_filter input {
+        margin-left: 0.5rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.25rem;
+        border: 1px solid #dee2e6;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,304 @@
+{% extends 'docs/base.html' %}
+{% load static %}
+{% load humanize %}
+{% load custom_filters %}
+
+{% block content %}
+<style>
+    .filtro-select {
+        min-width: 200px;
+        width: 100%;
+    }
+</style>
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-pdf-fill"></i> Descarga de PDFs - Último Registro por Jardín
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Esta funcionalidad permite descargar el PDF del último registro de cada combinación jardín-proveedor. 
+                                Cada jardín puede tener múltiples proveedores (agua, luz, etc.) y se muestra el registro más reciente de cada uno.
+                                <strong>Solo se incluyen establecimientos marcados como activos.</strong>
+                                <br><br>
+                                <strong>Opciones de descarga:</strong>
+                                <br>• <strong>Descargar ZIP:</strong> Descarga todos los PDFs en un archivo comprimido (recomendado)
+                                <br>• <strong>Descargar Individuales:</strong> Descarga cada PDF por separado (uno por uno)
+                                <br><br>
+                                Puedes filtrar por proveedor si es necesario.
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="filtrosForm" method="get" class="mb-4">
+                        <div class="row align-items-end">
+                            <div class="col-md-6">
+                                <label for="proveedor" class="form-label">Filtrar por Proveedor:</label>
+                                <select name="proveedor" id="proveedor" class="form-select filtro-select">
+                                    <option value="">-- Todos los proveedores --</option>
+                                    {% for proveedor in proveedores %}
+                                    <option value="{{ proveedor.id_prov }}" 
+                                            {% if proveedor.id_prov|stringformat:"s" == proveedor_seleccionado %}selected{% endif %}>
+                                        {{ proveedor.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <a href="{% url 'docs:descargar_zip_jardines' %}{% if proveedor_seleccionado %}?proveedor={{ proveedor_seleccionado }}{% endif %}" 
+                                   class="btn btn-success me-2">
+                                    <i class="bi bi-file-earmark-zip-fill"></i> Descargar ZIP
+                                </a>
+                                <button type="button" class="btn btn-warning me-2" onclick="descargarTodosPDFs()">
+                                    <i class="bi bi-file-pdf-fill"></i> Descargar Individuales
+                                </button>
+                                <a href="{% url 'docs:descargar_pdfs_jardines' %}" class="btn btn-secondary">
+                                    <i class="bi bi-arrow-clockwise"></i> Limpiar Filtros
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="alert alert-success">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Jardines activos detectados:</strong> {{ jardines.count }} | 
+                                <strong>Últimos registros por jardín-proveedor:</strong> {{ registros|length }} | 
+                                <strong>Proveedores disponibles:</strong> {{ proveedores.count }}
+                                <br><small>Se muestra el registro más reciente de cada combinación jardín-proveedor (solo establecimientos activos)</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if registros %}
+                        <div class="table-responsive">
+                            <table id="tablaJardines" class="table table-striped table-hover display nowrap" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>Jardín</th>
+                                        <th>Proveedor</th>
+                                        <th>Tipo</th>
+                                        <th>N° Recibo</th>
+                                        <th>N° Servicio</th>
+                                        <th>Fecha Vencimiento</th>
+                                        <th class="text-end">Interés</th>
+                                        <th class="text-end">Monto</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for registro in registros %}
+                                    <tr>
+                                        <td><strong>{{ registro.servicio.establecimiento.nombre }}</strong></td>
+                                        <td>{{ registro.servicio.proveedor.nombre }}</td>
+                                        <td>{{ registro.servicio.proveedor.tipo_proveedor.nombre }}</td>
+                                        <td>{{ registro.numero_recibo }}</td>
+                                        <td>{{ registro.servicio.numero_servicio }}</td>
+                                        <td data-order="{{ registro.fecha_vencimiento|date:'Y-m-d' }}">
+                                            {{ registro.fecha_vencimiento|date:"d/m/Y" }}
+                                        </td>
+                                        <td class="text-end">${{ registro.interes|format_money }}</td>
+                                        <td class="text-end">${{ registro.monto|format_money }}</td>
+                                        <td class="text-center">
+                                            <div class="btn-group">
+                                                <a href="{% url 'docs:descargar_registro_pdf' registro.id_registro %}" 
+                                                   class="btn btn-sm btn-outline-primary" 
+                                                   title="Descargar PDF">
+                                                    <i class="bi bi-file-pdf"></i>
+                                                </a>
+                                                <a href="{% url 'docs:generar_enlace_correo' registro.id_registro %}" 
+                                                   class="btn btn-sm btn-outline-info" 
+                                                   title="Enviar por correo"
+                                                   onclick="return handleEmailClick(this, event);">
+                                                    <i class="bi bi-envelope"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            No se encontraron registros de jardines con los filtros aplicados.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar DataTable
+    if (document.getElementById('tablaJardines')) {
+        const table = $('#tablaJardines').DataTable({
+            language: {
+                url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+            },
+            dom: 'Bfrtip',
+            buttons: [
+                'copy', 'csv', 'excel', 'pdf', 'print'
+            ],
+            order: [[5, 'desc']], // Ordenar por fecha de vencimiento descendente
+            pageLength: 25,
+            columnDefs: [
+                {
+                    targets: -1, // Última columna (acciones)
+                    orderable: false,
+                    searchable: false
+                },
+                {
+                    targets: 5, // Columna de fecha
+                    type: 'date',
+                    render: function(data, type, row) {
+                        if (type === 'sort') {
+                            return data;
+                        }
+                        return data;
+                    }
+                }
+            ],
+            initComplete: function() {
+                // Agregar filtro de jardín
+                this.api().columns(0).every(function() {
+                    const column = this;
+                    const select = $('<select class="form-select form-select-sm"><option value="">Todos los jardines</option></select>')
+                        .appendTo($(column.header()).empty())
+                        .on('change', function() {
+                            const val = $.fn.dataTable.util.escapeRegex($(this).val());
+                            column.search(val ? '^' + val + '$' : '', true, false).draw();
+                        });
+
+                    column.data().unique().sort().each(function(d) {
+                        select.append('<option value="' + d + '">' + d + '</option>');
+                    });
+                });
+                
+                // Agregar filtro de tipo de proveedor
+                this.api().columns(2).every(function() {
+                    const column = this;
+                    const select = $('<select class="form-select form-select-sm"><option value="">Todos los tipos</option></select>')
+                        .appendTo($(column.header()).empty())
+                        .on('change', function() {
+                            const val = $.fn.dataTable.util.escapeRegex($(this).val());
+                            column.search(val ? '^' + val + '$' : '', true, false).draw();
+                        });
+
+                    column.data().unique().sort().each(function(d) {
+                        select.append('<option value="' + d + '">' + d + '</option>');
+                    });
+                });
+            }
+        });
+    }
+
+    // Enviar formulario al cambiar filtros
+    document.getElementById('proveedor').addEventListener('change', function() {
+        document.getElementById('filtrosForm').submit();
+    });
+});
+
+function handleEmailClick(link, event) {
+    event.preventDefault();
+    
+    fetch(link.href)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error al generar el correo');
+            }
+            return response.text();
+        })
+        .then(mailtoLink => {
+            window.location.href = mailtoLink;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Hubo un error al generar el correo. Por favor, intente nuevamente.');
+        });
+    
+    return false;
+}
+
+function descargarTodosPDFs() {
+    if (!confirm('¿Está seguro de que desea descargar todos los PDFs del último registro de cada jardín? Esto puede tomar varios minutos.')) {
+        return;
+    }
+    
+    
+    const boton = event.target;
+    const textoOriginal = boton.innerHTML;
+    boton.innerHTML = '<i class="bi bi-hourglass-split"></i> Descargando...';
+    boton.disabled = true;
+    
+    // Buscar enlaces de PDF de múltiples maneras
+    let enlacesPDF = document.querySelectorAll('a[href*="pdf/"]');
+    
+    // Si no encuentra con "pdf/", intentar con otros selectores
+    if (enlacesPDF.length === 0) {
+        enlacesPDF = document.querySelectorAll('a[href*="descargar_registro_pdf"]');
+    }
+    if (enlacesPDF.length === 0) {
+        enlacesPDF = document.querySelectorAll('a[href*="descargar-registro-pdf"]');
+    }
+    if (enlacesPDF.length === 0) {
+        enlacesPDF = document.querySelectorAll('a[title="Descargar PDF"]');
+    }
+    
+    let descargados = 0;
+    const total = enlacesPDF.length;
+    
+    
+    if (total === 0) {
+        alert('No hay registros de jardines para descargar. Verifique que la tabla tenga registros.');
+        boton.innerHTML = textoOriginal;
+        boton.disabled = false;
+        return;
+    }
+    
+    function descargarPDF(enlace, indice) {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                const linkTemporal = document.createElement('a');
+                linkTemporal.href = enlace.href;
+                linkTemporal.download = '';
+                linkTemporal.style.display = 'none';
+                document.body.appendChild(linkTemporal);
+                linkTemporal.click();
+                document.body.removeChild(linkTemporal);
+                
+                descargados++;
+                boton.innerHTML = `<i class="bi bi-hourglass-split"></i> Descargando... (${descargados}/${total})`;
+                
+                resolve();
+            }, 1000);
+        });
+    }
+    
+    async function descargarSecuencial() {
+        for (let i = 0; i < enlacesPDF.length; i++) {
+            await descargarPDF(enlacesPDF[i], i);
+        }
+        
+        boton.innerHTML = '<i class="bi bi-check-circle"></i> ¡Descarga completada!';
+        setTimeout(() => {
+            boton.innerHTML = textoOriginal;
+            boton.disabled = false;
+        }, 3000);
+    }
+    
+    descargarSecuencial();
+}
+</script>
+{% endblock %}

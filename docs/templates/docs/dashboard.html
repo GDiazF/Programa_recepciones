@@ -1,0 +1,282 @@
+{% extends 'docs/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Título del Dashboard -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="text-primary"><i class="bi bi-speedometer2"></i> Dashboard - Panel de Control</h2>
+            <p class="text-muted">Resumen general del sistema de recepciones</p>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Estadísticas Principales -->
+    <div class="row mb-4">
+        <!-- Total Registros -->
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Registros
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_registros }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-file-text fs-2 text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Registros del Mes -->
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Registros Este Mes
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ cantidad_mes }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-calendar-check fs-2 text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Servicios -->
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Total Servicios
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_servicios }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-tools fs-2 text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Establecimientos -->
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-secondary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">
+                                Establecimientos
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_establecimientos }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-building fs-2 text-secondary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accesos Rápidos -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Accesos Rápidos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'docs:crear_registro' %}" class="btn btn-primary w-100">
+                                <i class="bi bi-plus-circle"></i> Nuevo Registro
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'docs:buscar_registro' %}" class="btn btn-warning w-100">
+                                <i class="bi bi-search"></i> Buscar y Editar
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'docs:importar_registros' %}" class="btn btn-success w-100">
+                                <i class="bi bi-upload"></i> Importar Registros
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'docs:listar_registros' %}" class="btn btn-info w-100">
+                                <i class="bi bi-list-ul"></i> Ver Registros
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Últimos Registros con Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Últimos Registros Agregados</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Filtros -->
+                    <form method="get" class="mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="proveedor" class="form-label">Filtrar por Proveedor:</label>
+                                <select name="proveedor" id="proveedor" class="form-select" onchange="this.form.submit()">
+                                    <option value="">Todos los proveedores</option>
+                                    {% for proveedor in proveedores %}
+                                    <option value="{{ proveedor.id_prov }}" 
+                                            {% if proveedor_seleccionado == proveedor.id_prov|stringformat:"s" %}selected{% endif %}>
+                                        {{ proveedor.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="establecimiento" class="form-label">Filtrar por Establecimiento:</label>
+                                <select name="establecimiento" id="establecimiento" class="form-select" onchange="this.form.submit()">
+                                    <option value="">Todos los establecimientos</option>
+                                    {% for establecimiento in establecimientos %}
+                                    <option value="{{ establecimiento.id_est }}" 
+                                            {% if establecimiento_seleccionado == establecimiento.id_est|stringformat:"s" %}selected{% endif %}>
+                                        {{ establecimiento.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="servicio" class="form-label">Filtrar por Servicio:</label>
+                                <select name="servicio" id="servicio" class="form-select" onchange="this.form.submit()">
+                                    <option value="">Todos los servicios</option>
+                                    {% for servicio in servicios %}
+                                    <option value="{{ servicio.id_serv }}" 
+                                            {% if servicio_seleccionado == servicio.id_serv|stringformat:"s" %}selected{% endif %}>
+                                        {{ servicio.numero_servicio }} - {{ servicio.establecimiento.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        {% if proveedor_seleccionado or establecimiento_seleccionado or servicio_seleccionado %}
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <a href="{% url 'docs:dashboard' %}" class="btn btn-sm btn-secondary">
+                                    <i class="bi bi-x-circle"></i> Limpiar Filtros
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </form>
+
+                    <!-- Tabla de Registros -->
+                    {% if ultimos_registros %}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped" id="tablaRegistros">
+                            <thead class="table-info">
+                                <tr>
+                                    <th>N° Servicio</th>
+                                    <th>N° Recibo</th>
+                                    <th>Establecimiento</th>
+                                    <th>Proveedor</th>
+                                    <th>Tipo</th>
+                                    <th>Monto</th>
+                                    <th>Fecha Emisión</th>
+                                    <th>Vencimiento</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for registro in ultimos_registros %}
+                                <tr>
+                                    <td>{{ registro.servicio.numero_servicio }}</td>
+                                    <td><strong>{{ registro.numero_recibo }}</strong></td>
+                                    <td>{{ registro.servicio.establecimiento.nombre|truncatewords:4 }}</td>
+                                    <td>{{ registro.servicio.proveedor.nombre }}</td>
+                                    <td>{{ registro.servicio.tipo_recibo.nombre }}</td>
+                                    <td class="text-end"><strong>${{ registro.monto|format_money }}</strong></td>
+                                    <td>{{ registro.fecha_emision|date:"d/m/Y"|default:"-" }}</td>
+                                    <td>{{ registro.fecha_vencimiento|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'docs:editar_registro' registro.id_registro %}" 
+                                           class="btn btn-sm btn-warning" 
+                                           title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{% url 'docs:descargar_registro_pdf' registro.id_registro %}" 
+                                           class="btn btn-sm btn-primary download-link" 
+                                           title="Descargar PDF">
+                                            <i class="bi bi-file-pdf"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning text-center">
+                        <i class="bi bi-info-circle fs-1"></i>
+                        <h5 class="mt-3">No se encontraron registros con los filtros seleccionados</h5>
+                        <p>Intenta cambiar los filtros o agregar nuevos registros al sistema.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .border-left-primary {
+        border-left: 0.25rem solid #4e73df !important;
+    }
+    .border-left-success {
+        border-left: 0.25rem solid #1cc88a !important;
+    }
+    .border-left-info {
+        border-left: 0.25rem solid #36b9cc !important;
+    }
+    .border-left-secondary {
+        border-left: 0.25rem solid #858796 !important;
+    }
+    .text-xs {
+        font-size: 0.7rem;
+    }
+    .text-gray-800 {
+        color: #5a5c69 !important;
+    }
+</style>
+
+<!-- DataTables Script -->
+<script>
+    $(document).ready(function() {
+        {% if ultimos_registros %}
+        $('#tablaRegistros').DataTable({
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
+            },
+            pageLength: 10,
+            order: [[6, 'desc']], // Ordenar por fecha de emisión descendente
+            responsive: true
+        });
+        {% endif %}
+    });
+</script>
+{% endblock %}

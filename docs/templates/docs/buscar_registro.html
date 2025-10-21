@@ -1,0 +1,128 @@
+{% extends 'docs/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-search"></i> Buscar y Editar Registros</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Formulario de búsqueda -->
+                    <form method="get" class="mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="tipo" class="form-label">Buscar por:</label>
+                                <select name="tipo" id="tipo" class="form-select">
+                                    <option value="servicio" {% if tipo_busqueda == 'servicio' %}selected{% endif %}>Número de Servicio</option>
+                                    <option value="recibo" {% if tipo_busqueda == 'recibo' %}selected{% endif %}>Número de Factura/Recibo</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="q" class="form-label">Término de búsqueda:</label>
+                                <input type="text" name="q" id="q" class="form-control" 
+                                       placeholder="Ingrese el número a buscar..." 
+                                       value="{{ query }}" required>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-search"></i> Buscar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Mensajes -->
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <!-- Resultados de búsqueda -->
+                    {% if query %}
+                        {% if registros %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> Se encontraron {{ registros|length }} registro(s) para "{{ query }}"
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped" id="tablaRegistros">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>N° Servicio</th>
+                                        <th>N° Recibo</th>
+                                        <th>Establecimiento</th>
+                                        <th>Proveedor</th>
+                                        <th>Tipo</th>
+                                        <th>Fecha Emisión</th>
+                                        <th>Fecha Vencimiento</th>
+                                        <th>Monto</th>
+                                        <th>Interés</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for registro in registros %}
+                                    <tr>
+                                        <td>{{ registro.servicio.numero_servicio }}</td>
+                                        <td>{{ registro.numero_recibo }}</td>
+                                        <td>{{ registro.servicio.establecimiento.nombre }}</td>
+                                        <td>{{ registro.servicio.proveedor.nombre }}</td>
+                                        <td>{{ registro.servicio.tipo_recibo.nombre }}</td>
+                                        <td>{{ registro.fecha_emision|date:"d/m/Y"|default:"-" }}</td>
+                                        <td>{{ registro.fecha_vencimiento|date:"d/m/Y" }}</td>
+                                        <td>${{ registro.monto|format_money }}</td>
+                                        <td>${{ registro.interes|format_money|default:"0" }}</td>
+                                        <td>
+                                            <a href="{% url 'docs:editar_registro' registro.id_registro %}" 
+                                               class="btn btn-sm btn-warning" 
+                                               title="Editar registro">
+                                                <i class="bi bi-pencil-square"></i> Editar
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> No se encontraron registros para "{{ query }}"
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-secondary text-center">
+                            <i class="bi bi-info-circle fs-1"></i>
+                            <p class="mt-3">Utilice el formulario de búsqueda para encontrar registros por número de servicio o número de factura/recibo.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DataTables Script -->
+<script>
+    $(document).ready(function() {
+        {% if registros %}
+        $('#tablaRegistros').DataTable({
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
+            },
+            pageLength: 10,
+            order: [[5, 'desc']], // Ordenar por fecha de emisión descendente
+            responsive: true
+        });
+        {% endif %}
+    });
+</script>
+{% endblock %}
+

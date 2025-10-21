@@ -1,0 +1,198 @@
+{% extends 'docs/base.html' %}
+{% load static %}
+{% load humanize %}
+{% load custom_filters %}
+
+{% block content %}
+<style>
+    .establecimiento-select {
+        min-width: 400px;
+        width: 100%;
+    }
+</style>
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-journal-text"></i> Registros de Servicios
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <form id="establecimientoForm" method="get" class="mb-0">
+                            <div class="row align-items-end">
+                                <div class="col-md-8">  
+                                    <label for="establecimiento" class="form-label">Seleccione un Establecimiento:</label>
+                                    <select name="establecimiento" id="establecimiento" class="form-select establecimiento-select">
+                                        <option value="">-- Seleccione un establecimiento --</option>
+                                        {% for establecimiento in establecimientos %}
+                                        <option value="{{ establecimiento.id_est }}" 
+                                                {% if establecimiento.id_est|stringformat:"s" == establecimiento_seleccionado %}selected{% endif %}>
+                                            {{ establecimiento.nombre }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                        <a href="{% url 'docs:descargar_masivo_registro' %}" class="btn btn-primary">
+                                            <i class="bi bi-download"></i> Descargar Registro Masivo
+                                        </a>
+                                </div>
+                            </div>
+                        </form>
+                        {% if establecimiento_seleccionado %}
+                        <a href="{% url 'docs:crear_registro' %}?establecimiento={{ establecimiento_seleccionado }}" 
+                           class="btn btn-success">
+                            <i class="bi bi-plus-circle"></i> Nuevo Registro
+                        </a>
+                        {% endif %}
+                    </div>
+
+                    {% if establecimiento_seleccionado %}
+                        {% if registros %}
+                            <div class="table-responsive">
+                                <table id="tablaRegistros" class="table table-striped table-hover display nowrap" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th>Proveedor</th>
+                                            <th>Tipo</th>
+                                            <th>N° Recibo</th>
+                                            <th>N° Servicio</th>
+                                            <th>Fecha Vencimiento</th>
+                                            <th class="text-end">Interés</th>
+                                            <th class="text-end">Monto</th>
+                                            <th class="text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for registro in registros %}
+                                        <tr>
+                                            <td>{{ registro.servicio.proveedor.nombre }}</td>
+                                            <td>{{ registro.servicio.proveedor.tipo_proveedor.nombre }}</td>
+                                            <td>{{ registro.numero_recibo }}</td>
+                                            <td>{{ registro.servicio.numero_servicio }}</td>
+                                            <td data-order="{{ registro.fecha_vencimiento|date:'Y-m-d' }}">
+                                                {{ registro.fecha_vencimiento|date:"d/m/Y" }}
+                                            </td>
+                                            <td class="text-end">${{ registro.interes|format_money }}</td>
+                                            <td class="text-end">${{ registro.monto|format_money }}</td>
+                                            <td class="text-center">
+                                                <div class="btn-group">
+                                                    <a href="{% url 'docs:descargar_registro_pdf' registro.id_registro %}" 
+                                                       class="btn btn-sm btn-outline-primary" 
+                                                       title="Descargar PDF">
+                                                        <i class="bi bi-file-pdf"></i>
+                                                    </a>
+                                                    <a href="{% url 'docs:generar_enlace_correo' registro.id_registro %}" 
+                                                       class="btn btn-sm btn-outline-info" 
+                                                       title="Enviar por correo"
+                                                       onclick="return handleEmailClick(this, event);">
+                                                        <i class="bi bi-envelope"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                No hay registros para el establecimiento seleccionado.
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            Seleccione un establecimiento para ver sus registros.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar DataTable
+    if (document.getElementById('tablaRegistros')) {
+        const table = $('#tablaRegistros').DataTable({
+            language: {
+                url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+            },
+            dom: 'Bfrtip',
+            buttons: [
+                'copy', 'csv', 'excel', 'pdf', 'print'
+            ],
+            order: [[4, 'desc']], // Ordenar por fecha de vencimiento descendente
+            pageLength: 25,
+            columnDefs: [
+                {
+                    targets: -1, // Última columna (acciones)
+                    orderable: false,
+                    searchable: false
+                },
+                {
+                    targets: 4, // Columna de fecha
+                    type: 'date', // Especificar que es una columna de fecha
+                    render: function(data, type, row) {
+                        if (type === 'sort') {
+                            return data; // Usar el valor data-order para ordenar
+                        }
+                        return data; // Mostrar el formato dd/mm/yyyy
+                    }
+                }
+            ],
+            initComplete: function() {
+                // Agregar filtro de tipo de proveedor
+                this.api().columns(1).every(function() {
+                    const column = this;
+                    const select = $('<select class="form-select form-select-sm"><option value="">Todos los tipos</option></select>')
+                        .appendTo($(column.header()).empty())
+                        .on('change', function() {
+                            const val = $.fn.dataTable.util.escapeRegex($(this).val());
+                            column.search(val ? '^' + val + '$' : '', true, false).draw();
+                        });
+
+                    // Obtener tipos únicos de la columna
+                    column.data().unique().sort().each(function(d) {
+                        select.append('<option value="' + d + '">' + d + '</option>');
+                    });
+                });
+            }
+        });
+    }
+
+    // Enviar formulario al cambiar establecimiento
+    document.getElementById('establecimiento').addEventListener('change', function() {
+        document.getElementById('establecimientoForm').submit();
+    });
+});
+
+function handleEmailClick(link, event) {
+    event.preventDefault();
+    
+    // Obtener el enlace mailto
+    fetch(link.href)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error al generar el correo');
+            }
+            return response.text();
+        })
+        .then(mailtoLink => {
+            // Abrir el cliente de correo
+            window.location.href = mailtoLink;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Hubo un error al generar el correo. Por favor, intente nuevamente.');
+        });
+    
+    return false;
+}
+
+</script>
+{% endblock %} 

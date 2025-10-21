@@ -1,0 +1,20 @@
+/* Estilos personalizados para DataTables */
+.dataTable tbody tr {
+    height: 28px !important; /* Reduce aún más la altura de las filas */
+}
+
+.dataTable tbody td {
+    padding: 2px 6px !important; /* Reduce aún más el padding vertical y horizontal */
+    vertical-align: middle !important;
+}
+
+/* Ajusta el tamaño de la fuente si es necesario */
+.dataTable {
+    font-size: 0.85rem; /* Reduce ligeramente el tamaño de la fuente */
+}
+
+/* Ajusta el espaciado de los encabezados */
+.dataTable thead th {
+    padding: 4px 6px !important; /* Reduce el padding de los encabezados */
+    font-size: 0.9rem; /* Ajusta el tamaño de la fuente de los encabezados */
+} 

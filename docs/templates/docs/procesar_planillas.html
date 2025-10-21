@@ -1,0 +1,187 @@
+{% extends 'docs/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="bi bi-file-earmark-spreadsheet me-2"></i>
+                        Procesar Planillas de Pago
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Mensajes -->
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <!-- Información -->
+                    <div class="alert alert-info mb-4">
+                        <h5 class="alert-heading">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            Información
+                        </h5>
+                        <p class="mb-0">
+                            Esta herramienta procesa archivos Excel de planillas de pago y los transforma 
+                            al formato requerido para carga masiva al banco.
+                        </p>
+                        <hr>
+                        <p class="mb-0">
+                            <strong>Tipos de proceso:</strong>
+                        </p>
+                        <ul class="mb-0">
+                            <li><strong>Con Cuenta:</strong> Procesa planillas de pago con datos bancarios (empleados con cuenta bancaria).</li>
+                            <li><strong>Sin Cuenta (Vale Vista):</strong> Procesa planillas para vale vista (empleados sin cuenta bancaria).</li>
+                        </ul>
+                    </div>
+
+                    <!-- Formulario -->
+                    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <!-- Tipo de Proceso -->
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-gear-fill me-2"></i>
+                                        {{ form.tipo_proceso.label }}
+                                    </label>
+                                    <div class="card">
+                                        <div class="card-body">
+                                            {% for radio in form.tipo_proceso %}
+                                                <div class="form-check mb-3">
+                                                    {{ radio.tag }}
+                                                    <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                                        {% if radio.choice_label == 'Con Cuenta' %}
+                                                            <i class="bi bi-bank text-primary me-2"></i>
+                                                        {% else %}
+                                                            <i class="bi bi-cash-coin text-success me-2"></i>
+                                                        {% endif %}
+                                                        <strong>{{ radio.choice_label }}</strong>
+                                                    </label>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% if form.tipo_proceso.errors %}
+                                        <div class="text-danger mt-2">
+                                            {{ form.tipo_proceso.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <!-- Archivo -->
+                                <div class="mb-4">
+                                    <label for="{{ form.archivo.id_for_label }}" class="form-label fw-bold">
+                                        <i class="bi bi-file-earmark-excel me-2"></i>
+                                        {{ form.archivo.label }}
+                                    </label>
+                                    <div class="card">
+                                        <div class="card-body">
+                                            {{ form.archivo }}
+                                            <small class="form-text text-muted d-block mt-2">
+                                                <i class="bi bi-info-circle me-1"></i>
+                                                {{ form.archivo.help_text }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                    {% if form.archivo.errors %}
+                                        <div class="text-danger mt-2">
+                                            {{ form.archivo.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Botones -->
+                                <div class="d-grid gap-2 mt-4">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="bi bi-play-circle-fill me-2"></i>
+                                        Procesar Archivo
+                                    </button>
+                                    <a href="{% url 'docs:dashboard' %}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-arrow-left me-2"></i>
+                                        Volver al Inicio
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Guía de Uso -->
+                    <hr class="my-4">
+                    <div class="accordion" id="accordionGuia">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingGuia">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGuia" aria-expanded="false" aria-controls="collapseGuia">
+                                    <i class="bi bi-question-circle-fill me-2"></i>
+                                    <strong>Guía de Uso</strong>
+                                </button>
+                            </h2>
+                            <div id="collapseGuia" class="accordion-collapse collapse" aria-labelledby="headingGuia" data-bs-parent="#accordionGuia">
+                                <div class="accordion-body">
+                                    <h5>Pasos para procesar archivos:</h5>
+                                    <ol>
+                                        <li>Seleccione el tipo de proceso que desea realizar (Con Cuenta o Sin Cuenta)</li>
+                                        <li>Haga clic en "Seleccionar archivo" y elija el archivo Excel (.xlsx o .xls)</li>
+                                        <li>Haga clic en "Procesar Archivo"</li>
+                                        <li>El archivo procesado se descargará automáticamente</li>
+                                    </ol>
+                                    
+                                    <h5 class="mt-3">Formato de entrada para Con Cuenta:</h5>
+                                    <p>El archivo debe contener al menos 14 columnas con la siguiente información:</p>
+                                    <ul>
+                                        <li>Columnas 0-1: Nombres</li>
+                                        <li>Columnas 2-4: Detalles (apellidos, identificación)</li>
+                                        <li>Columna 5: Código de banco (número)</li>
+                                        <li>Columna 6: Nombre del banco</li>
+                                        <li>Columna 9: Glosa (número de cuenta)</li>
+                                        <li>Columna 10: Tipo de medio de pago</li>
+                                        <li>Columna 13: Sueldo líquido</li>
+                                    </ul>
+                                    
+                                    <h5 class="mt-3">Formato de entrada para Sin Cuenta (Vale Vista):</h5>
+                                    <p>El archivo debe contener información básica del empleado y monto:</p>
+                                    <ul>
+                                        <li>Columnas 0-1: RUT e información básica</li>
+                                        <li>Columnas 2-4: Apellidos y nombres</li>
+                                        <li>Columna 13: Monto</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-check-input:checked {
+        background-color: var(--primary-blue);
+        border-color: var(--primary-blue);
+    }
+    
+    .accordion-button:not(.collapsed) {
+        background-color: rgba(30, 64, 175, 0.1);
+        color: var(--primary-blue);
+    }
+    
+    .accordion-button:focus {
+        border-color: var(--cyan);
+        box-shadow: 0 0 0 0.25rem rgba(6, 182, 212, 0.25);
+    }
+</style>
+{% endblock %}
+

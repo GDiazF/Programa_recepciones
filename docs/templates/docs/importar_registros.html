@@ -1,0 +1,208 @@
+{% extends 'docs/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-cloud-upload"></i> Importar Registros de Servicios
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <p class="text-muted mb-0">
+                                <i class="bi bi-info-circle"></i> 
+                                Utilice este formulario para importar registros de servicios desde un archivo Excel.
+                                Asegúrese de que el archivo siga el formato de la plantilla proporcionada.
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <a href="{% url 'docs:descargar_plantilla_registros' %}" class="btn btn-outline-primary">
+                                <i class="bi bi-download"></i> Descargar Plantilla
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if messages %}
+            <div class="messages mb-4">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm">
+                    {{ message|safe }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Upload Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="bi bi-file-earmark-excel"></i> Selección de Archivo</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="importForm">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label for="archivo" class="form-label">Archivo Excel</label>
+                            <input type="file" class="form-control" id="archivo" name="archivo" accept=".xlsx, .xls" required>
+                            <div class="form-text">
+                                <strong>Columnas requeridas:</strong><br>
+                                <ul class="mb-0 small">
+                                    <li>numero_servicio</li>
+                                    <li>numero_recibo</li>
+                                    <li>fecha_envio_pago</li>
+                                    <li>fecha_emision</li>
+                                    <li>fecha_vencimiento</li>
+                                    <li>monto</li>
+                                    <li>interes (opcional)</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="bi bi-cloud-upload"></i> Importar Registros
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loadingIndicator" style="display: none;" class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <h6 class="mb-2">Procesando archivo, por favor espere...</h6>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" style="width: 100%"></div>
+                        </div>
+                        <p class="text-muted small mt-2 mb-0">
+                            <span id="progressText"></span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            {% if errores %}
+            <!-- Errors Card -->
+            <div class="card shadow-sm border-danger mb-4">
+                <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Errores Encontrados
+                    </h6>
+                    <span class="badge bg-light text-danger">{{ errores|length }} errores</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 100px;">Fila</th>
+                                    <th>Error</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for error in errores %}
+                                <tr>
+                                    <td class="text-center">{{ error.fila }}</td>
+                                    <td class="text-danger">
+                                        <i class="bi bi-exclamation-circle"></i> {{ error.mensaje }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if registros_importados %}
+            <!-- Success Card -->
+            <div class="card shadow-sm border-success mb-4">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="bi bi-check-circle"></i> Registros Importados Exitosamente
+                    </h6>
+                    <span class="badge bg-light text-success">{{ registros_importados|length }} registros</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Número de Recibo</th>
+                                    <th>Servicio</th>
+                                    <th>Fecha de Emisión</th>
+                                    <th>Fecha de Vencimiento</th>
+                                    <th class="text-end">Monto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for registro in registros_importados %}
+                                <tr>
+                                    <td>{{ registro.numero_recibo }}</td>
+                                    <td>{{ registro.servicio }}</td>
+                                    <td>{{ registro.fecha_emision|default:"-" }}</td>
+                                    <td>{{ registro.fecha_vencimiento }}</td>
+                                    <td class="text-end">${{ registro.monto|format_money }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('importForm').addEventListener('submit', function() {
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const submitBtn = document.getElementById('submitBtn');
+    const progressText = document.getElementById('progressText');
+    
+    // Mostrar indicador de carga
+    loadingIndicator.style.display = 'block';
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Procesando...';
+    
+    // Simular actualización de progreso
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += 5;
+        if (progress <= 100) {
+            progressText.textContent = `Progreso: ${progress}%`;
+        } else {
+            clearInterval(interval);
+        }
+    }, 500);
+});
+
+// Añadir clase de animación para el ícono de carga
+document.head.insertAdjacentHTML('beforeend', `
+    <style>
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+`);
+</script>
+{% endblock %} 

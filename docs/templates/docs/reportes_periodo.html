@@ -1,0 +1,305 @@
+{% extends 'docs/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Título -->
+            <div class="mb-4">
+                <h2 class="text-primary"><i class="bi bi-calendar-range"></i> Reportes por Período</h2>
+                <p class="text-muted">Busque registros por rango de fechas de vencimiento</p>
+            </div>
+
+            <!-- Formulario de Filtros -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros de Búsqueda</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" id="formReporte">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label for="fecha_inicio" class="form-label">Fecha Vencimiento Desde <span class="text-danger">*</span></label>
+                                <input type="date" name="fecha_inicio" id="fecha_inicio" 
+                                       class="form-control" value="{{ fecha_inicio }}" required>
+                                <small class="text-muted">Fecha de vencimiento inicial</small>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="fecha_fin" class="form-label">Fecha Vencimiento Hasta <span class="text-danger">*</span></label>
+                                <input type="date" name="fecha_fin" id="fecha_fin" 
+                                       class="form-control" value="{{ fecha_fin }}" required>
+                                <small class="text-muted">Fecha de vencimiento final</small>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="proveedor" class="form-label">Proveedor</label>
+                                <select name="proveedor" id="proveedor" class="form-select">
+                                    <option value="">Todos los proveedores</option>
+                                    {% for proveedor in proveedores %}
+                                    <option value="{{ proveedor.id_prov }}" 
+                                            {% if proveedor_seleccionado == proveedor.id_prov|stringformat:"s" %}selected{% endif %}>
+                                        {{ proveedor.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="establecimiento" class="form-label">Establecimiento</label>
+                                <select name="establecimiento" id="establecimiento" class="form-select">
+                                    <option value="">Todos los establecimientos</option>
+                                    {% for establecimiento in establecimientos %}
+                                    <option value="{{ establecimiento.id_est }}" 
+                                            {% if establecimiento_seleccionado == establecimiento.id_est|stringformat:"s" %}selected{% endif %}>
+                                        {{ establecimiento.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <label for="servicio" class="form-label">
+                                    Servicio Específico
+                                    <small class="text-muted">(opcional)</small>
+                                </label>
+                                <select name="servicio" id="servicio" class="form-select" disabled>
+                                    <option value="">Seleccione primero un proveedor y establecimiento</option>
+                                    {% for servicio in servicios %}
+                                    <option value="{{ servicio.id_serv }}" 
+                                            data-proveedor="{{ servicio.proveedor.id_prov }}"
+                                            data-establecimiento="{{ servicio.establecimiento.id_est }}"
+                                            {% if servicio_seleccionado == servicio.id_serv|stringformat:"s" %}selected{% endif %}
+                                            style="display: none;">
+                                        {{ servicio.numero_servicio }} - {{ servicio.proveedor.nombre }} - {{ servicio.establecimiento.nombre }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted d-block mt-1">
+                                    💡 Si deja "Todos los servicios", mostrará todos los registros. 
+                                    Si selecciona un servicio específico, solo mostrará los registros de ese servicio.
+                                </small>
+                            </div>
+                        </div>
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-search"></i> Buscar Registros
+                                </button>
+                                {% if fecha_inicio or fecha_fin %}
+                                <a href="{% url 'docs:reportes_periodo' %}" class="btn btn-secondary">
+                                    <i class="bi bi-x-circle"></i> Limpiar
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Mensajes -->
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Tabla de Resultados -->
+            {% if registros %}
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0"><i class="bi bi-table"></i> Registros Encontrados</h5>
+                        </div>
+                        <div class="d-flex gap-2 align-items-center">
+                            <span class="badge bg-light text-dark">{{ total_registros }} registro{{ total_registros|pluralize }}</span>
+                            <a href="{% url 'docs:exportar_reporte_periodo' %}?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}{% if proveedor_seleccionado %}&proveedor={{ proveedor_seleccionado }}{% endif %}{% if establecimiento_seleccionado %}&establecimiento={{ establecimiento_seleccionado }}{% endif %}{% if servicio_seleccionado %}&servicio={{ servicio_seleccionado }}{% endif %}" 
+                               class="btn btn-light btn-sm">
+                                <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+                            </a>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <small>
+                            📅 Periodo: {{ fecha_inicio|date:"d/m/Y" }} - {{ fecha_fin|date:"d/m/Y" }}
+                            {% if proveedor_seleccionado %}
+                                | 🏢 Proveedor filtrado
+                            {% endif %}
+                            {% if establecimiento_seleccionado %}
+                                | 🏫 Establecimiento filtrado
+                            {% endif %}
+                            {% if servicio_seleccionado %}
+                                | ⚙️ Servicio específico seleccionado
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="tablaRegistros" class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Proveedor</th>
+                                    <th>Establecimiento</th>
+                                    <th>RBD</th>
+                                    <th>N° Servicio</th>
+                                    <th>Tipo Doc.</th>
+                                    <th>N° Documento</th>
+                                    <th>F. Emisión</th>
+                                    <th>F. Vencimiento</th>
+                                    <th>F. Envío Pago</th>
+                                    <th>Monto</th>
+                                    <th>Interés</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for registro in registros %}
+                                <tr>
+                                    <td>{{ registro.servicio.proveedor.nombre }}</td>
+                                    <td>{{ registro.servicio.establecimiento.nombre }}</td>
+                                    <td>{{ registro.servicio.establecimiento.rbd }}</td>
+                                    <td>{{ registro.servicio.numero_servicio }}</td>
+                                    <td>{{ registro.servicio.tipo_recibo.nombre }}</td>
+                                    <td>{{ registro.numero_recibo }}</td>
+                                    <td>
+                                        {% if registro.fecha_emision %}
+                                            {{ registro.fecha_emision|date:"d/m/Y" }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ registro.fecha_vencimiento|date:"d/m/Y" }}</td>
+                                    <td>{{ registro.fecha_envio_pago|date:"d/m/Y" }}</td>
+                                    <td class="text-end">${{ registro.monto|format_money }}</td>
+                                    <td class="text-end">
+                                        {% if registro.interes %}
+                                            ${{ registro.interes|format_money }}
+                                        {% else %}
+                                            <span class="text-muted">$0</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end fw-bold">
+                                        {% with total=registro.monto|add:registro.interes %}
+                                            ${{ total|format_money }}
+                                        {% endwith %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% elif fecha_inicio and fecha_fin %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No se encontraron registros para el período seleccionado.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .table th {
+        white-space: nowrap;
+        font-size: 0.9rem;
+    }
+    
+    .table td {
+        font-size: 0.85rem;
+        vertical-align: middle;
+    }
+</style>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    $(document).ready(function() {
+        // Inicializar DataTable si hay registros
+        {% if registros %}
+        $('#tablaRegistros').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json"
+            },
+            "order": [[0, "asc"], [1, "asc"], [7, "asc"]],
+            "pageLength": 25,
+            "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]],
+            "dom": 'Blfrtip',
+            "buttons": [
+                {
+                    extend: 'copy',
+                    text: '<i class="bi bi-clipboard"></i> Copiar',
+                    className: 'btn btn-secondary btn-sm'
+                },
+                {
+                    extend: 'print',
+                    text: '<i class="bi bi-printer"></i> Imprimir',
+                    className: 'btn btn-secondary btn-sm'
+                }
+            ]
+        });
+        {% endif %}
+
+        // Función para filtrar servicios según proveedor y establecimiento
+        function filtrarServicios() {
+            const proveedorId = $('#proveedor').val();
+            const establecimientoId = $('#establecimiento').val();
+            const servicioSelect = $('#servicio');
+            const todasLasOpciones = servicioSelect.find('option');
+            
+            // Ocultar todas las opciones excepto la primera
+            todasLasOpciones.each(function() {
+                if ($(this).val() === '') {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+            
+            // Si hay proveedor Y establecimiento seleccionados
+            if (proveedorId && establecimientoId) {
+                servicioSelect.prop('disabled', false);
+                servicioSelect.find('option:first').text('Todos los servicios');
+                
+                // Mostrar solo servicios que coincidan con proveedor Y establecimiento
+                let serviciosEncontrados = 0;
+                todasLasOpciones.each(function() {
+                    const opcion = $(this);
+                    const opcionProveedor = opcion.data('proveedor');
+                    const opcionEstablecimiento = opcion.data('establecimiento');
+                    
+                    if (opcionProveedor == proveedorId && opcionEstablecimiento == establecimientoId) {
+                        opcion.show();
+                        serviciosEncontrados++;
+                    }
+                });
+                
+                if (serviciosEncontrados === 0) {
+                    servicioSelect.find('option:first').text('No hay servicios para esta combinación');
+                }
+            } else {
+                // Si no hay proveedor Y establecimiento, deshabilitar y resetear
+                servicioSelect.prop('disabled', true);
+                servicioSelect.val('');
+                servicioSelect.find('option:first').text('Seleccione primero un proveedor y establecimiento');
+            }
+        }
+        
+        // Ejecutar filtro al cambiar proveedor o establecimiento
+        $('#proveedor, #establecimiento').on('change', function() {
+            filtrarServicios();
+            // Resetear servicio seleccionado al cambiar proveedor o establecimiento
+            $('#servicio').val('');
+        });
+        
+        // Ejecutar filtro al cargar la página (por si hay valores preseleccionados)
+        filtrarServicios();
+    });
+</script>
+{% endblock %}

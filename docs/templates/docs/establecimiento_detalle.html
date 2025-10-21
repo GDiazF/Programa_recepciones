@@ -1,0 +1,95 @@
+{% extends 'docs/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">{{ establecimiento.nombre }}</h2>
+        <div>
+            <a href="{% url 'docs:listar_establecimientos' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+            <a href="{% url 'docs:editar_establecimiento' establecimiento.id_est %}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+        </div>
+    </div>
+
+    <!-- General Information Card -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">Información General</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>RBD:</strong> {{ establecimiento.rbd }}</p>
+                    <p><strong>Dirección:</strong> {{ establecimiento.direccion }}</p>
+                    <p><strong>Comuna:</strong> {{ establecimiento.comuna }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Teléfono:</strong> {{ establecimiento.telefono|default:"No especificado" }}</p>
+                    <p><strong>Email:</strong> {{ establecimiento.email|default:"No especificado" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Director Information Card -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="card-title mb-0">Información del Director</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Nombre:</strong> {{ establecimiento.director }}</p>
+                    <p><strong>Email:</strong> {{ establecimiento.director.email|default:"No especificado" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Associated Services Card -->
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <h5 class="card-title mb-0">Servicios Asociados</h5>
+        </div>
+        <div class="card-body">
+            {% if servicios %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>N° Servicio</th>
+                                <th>Proveedor</th>
+                                <th>Tipo Recibo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for servicio in servicios %}
+                            <tr>
+                                <td>{{ servicio.numero_servicio }}</td>
+                                <td>{{ servicio.proveedor }}</td>
+                                <td>{{ servicio.tipo_recibo }}</td>
+                                <td>
+                                    <a href="{% url 'docs:ver_servicio' servicio.id_serv %}" class="btn btn-sm btn-info" title="Ver detalles">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    No hay servicios asociados a este establecimiento.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

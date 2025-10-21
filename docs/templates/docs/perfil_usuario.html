@@ -1,0 +1,103 @@
+{% extends 'docs/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Título -->
+            <div class="mb-4">
+                <h2 class="text-primary"><i class="bi bi-person-gear"></i> Perfil de Usuario</h2>
+                <p class="text-muted">Gestiona tu información personal</p>
+            </div>
+
+            <!-- Mensajes -->
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="row">
+                <!-- Información del Usuario -->
+                <div class="col-md-4">
+                    <div class="card shadow">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-person-circle"></i> Información Actual</h5>
+                        </div>
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="bi bi-person-circle" style="font-size: 4rem; color: var(--primary-blue);"></i>
+                            </div>
+                            <h4>{{ user.get_full_name|default:user.username }}</h4>
+                            <p class="text-muted">{{ user.email }}</p>
+                            <hr>
+                            <div class="text-start">
+                                <small class="text-muted">
+                                    <strong>Usuario:</strong> {{ user.username }}<br>
+                                    <strong>Último acceso:</strong> {{ user.last_login|date:"d/m/Y H:i" }}<br>
+                                    <strong>Miembro desde:</strong> {{ user.date_joined|date:"d/m/Y" }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulario de Edición -->
+                <div class="col-md-8">
+                    <div class="card shadow">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-pencil-square"></i> Editar Perfil</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post">
+                                {% csrf_token %}
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                            {{ form.first_name.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.first_name }}
+                                        {% if form.first_name.errors %}
+                                            <div class="text-danger small">{{ form.first_name.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                            {{ form.last_name.label }} <span class="text-danger">*</span>
+                                        </label>
+                                        {{ form.last_name }}
+                                        {% if form.last_name.errors %}
+                                            <div class="text-danger small">{{ form.last_name.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="{{ form.email.id_for_label }}" class="form-label">
+                                        {{ form.email.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.email }}
+                                    {% if form.email.errors %}
+                                        <div class="text-danger small">{{ form.email.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle"></i> Guardar Cambios
+                                    </button>
+                                    <a href="{% url 'docs:cambiar_password' %}" class="btn btn-warning">
+                                        <i class="bi bi-shield-check"></i> Cambiar Contraseña
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
