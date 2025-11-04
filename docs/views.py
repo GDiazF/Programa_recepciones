@@ -12,7 +12,7 @@ from django.db import transaction
 from datetime import datetime
 from django.core.paginator import Paginator
 from .forms import ServicioForm, EstablecimientoForm, ProveedorForm, TipoReciboForm, RegistroServicioForm, PerfilUsuarioForm
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required	
 from django.contrib.auth.views import PasswordChangeView, LoginView
 from django.contrib.auth.forms import PasswordChangeForm
 from django.urls import reverse_lazy
@@ -40,6 +40,11 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 # Create your views here.
 
+
+
+
+
+
 class CustomLoginView(LoginView):
     template_name = 'docs/login.html'
     redirect_authenticated_user = True
@@ -49,10 +54,12 @@ class CustomLoginView(LoginView):
 
 #vista para la pagina principal - redirige al dashboard
 @login_required
+
 def base(request):
     return redirect('docs:dashboard')
 
 #vista para el dashboard con estadísticas
+@permission_required('docs.ver_dashboard')
 @login_required
 def dashboard(request):
     from django.db.models import Count
@@ -584,6 +591,7 @@ def listar_registros(request):
         'establecimiento_seleccionado': establecimiento_id
     })
 
+@permission_required('docs.Acceso_a_reportes')
 @login_required
 def descargar_registro_pdf(request, registro_id):
     # Configurar locale para fechas en español

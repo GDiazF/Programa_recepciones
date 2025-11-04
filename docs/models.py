@@ -1,5 +1,21 @@
 from django.db import models
 
+
+#Modelo de permisos proxy (para vistas que no tienen modelos)
+class PermisosProxy(models.Model):
+    class Meta:
+        managed = False
+        default_permissions = ()
+        verbose_name = 'PermisosProxy'
+        verbose_name_plural = 'PermisosProxys'
+        permissions = [
+            ('ver_dashboard', 'Puede ver dashboard'),
+            ('Acceso_a_reportes', 'Puede acceder a reportes'),
+        ]
+    def __str__(self):
+        return 'Dashboard'
+
+
 # Create your models here.
 class Directores(models.Model):
     id_dir = models.AutoField(primary_key=True)
@@ -14,6 +30,13 @@ class Directores(models.Model):
     class Meta:
         verbose_name = 'Director'
         verbose_name_plural = 'Directores'
+
+        permissions = [
+            ('ver_director', 'Puede ver director'),
+            ('editar_director', 'Puede editar director'),
+            ('eliminar_director', 'Puede eliminar director'),
+            ('crear_director', 'Puede crear director'),
+        ]
 
     def __str__(self):
         return f"{self.nombre} {self.apellido_p} {self.apellido_m}"
@@ -45,6 +68,13 @@ class Establecimientos(models.Model):
         verbose_name_plural = 'Establecimientos'
         unique_together = ['rbd', 'nombre']
 
+        permissions = [
+            ('ver_establecimiento', 'Puede ver establecimiento'),
+            ('editar_establecimiento', 'Puede editar establecimiento'),
+            ('eliminar_establecimiento', 'Puede eliminar establecimiento'),
+            ('crear_establecimiento', 'Puede crear establecimiento'),
+        ]
+
     def __str__(self):
         return f"{self.nombre} ({self.rbd}) ({self.comuna})"
 
@@ -68,9 +98,18 @@ class Proveedor(models.Model):
     tipo_proveedor = models.ForeignKey(TipoProveedor, on_delete=models.CASCADE, related_name='proveedores')
     acronimo = models.CharField(max_length=10, null=False, blank=False, verbose_name="Acrónimo", default='ADA')
 
+    
+
     class Meta:
         verbose_name = 'Proveedor'
         verbose_name_plural = 'Proveedores'
+
+        permissions = [
+        ('ver_proveedor', 'Puede ver proveedor'),
+        ('editar_proveedor', 'Puede editar proveedor'),
+        ('eliminar_proveedor', 'Puede eliminar proveedor'),
+        ('crear_proveedor', 'Puede crear proveedor'),
+        ]
 
     def __str__(self):
         return self.nombre
@@ -100,6 +139,13 @@ class Servicios(models.Model):
         verbose_name_plural = 'Servicios'
         unique_together = ['numero_servicio', 'proveedor', 'establecimiento']
 
+        permissions = [
+            ('ver_servicio', 'Puede ver servicio'),
+            ('editar_servicio', 'Puede editar servicio'),
+            ('eliminar_servicio', 'Puede eliminar servicio'),
+            ('crear_servicio', 'Puede crear servicio'),
+        ]
+
     def __str__(self):
         return f"Servicio {self.numero_servicio} - {self.establecimiento}"
 
@@ -114,10 +160,19 @@ class RegistroServicio(models.Model):
     interes = models.IntegerField(null=True, blank=True, default=0, verbose_name="Interés")
     monto = models.IntegerField(null=False, blank=False, verbose_name="Monto")
 
+
+
     class Meta:
         verbose_name = 'Registro de Servicio'
         verbose_name_plural = 'Registros de Servicios'
         unique_together = ['servicio', 'numero_recibo']
+
+        permissions = [
+        ('ver_registro', 'Puede ver registro'),
+        ('editar_registro', 'Puede editar registro'),
+        ('eliminar_registro', 'Puede eliminar registro'),
+        ('crear_registro', 'Puede crear registro'),
+        ]
 
     def __str__(self):
         return f"Registro {self.numero_recibo} - {self.servicio}"
